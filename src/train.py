@@ -8,6 +8,8 @@ from sklearn import metrics
 
 import config
 import dataset
+import engine
+from model import CaptchaModel
 
 
 def run_training():
@@ -54,7 +56,7 @@ def run_training():
 
     test_dataset = dataset.ClassificationDataset(image_paths=test_images,
                                                   targets=test_targets,
-                                                  resize=(config.img_height, config.img_width))
+                                                  resize=(config.image_height, config.image_width))
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
@@ -63,7 +65,18 @@ def run_training():
         shuffle=False
     )
 
-    model = ../
+    model = CaptchaModel(num_chars=len(le.classes_))
+    model.to(config.device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, factor=0.8, patience=5, verbose=True
+    )
+
+    for epoch in range(config.epochs):
+        train_loss = engine.train(model, train_loader, optimizer)
+        valid_preds, valid_loss = engine.eval(model, train_loader)
+        print(f"Epoch: {epoch}, Train loss: {train_loss}, Val loss: {valid_loss}")
 
 
 
