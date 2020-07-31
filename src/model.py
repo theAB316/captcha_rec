@@ -12,11 +12,11 @@ class CaptchaModel(nn.Module):
         self.conv_2 = nn.Conv2d(128, 64, kernel_size=(3, 3), padding=(1, 1))
         self.maxpool_2 = nn.MaxPool2d(kernel_size=(2, 2))
 
-        self.linear_1 = nn.Linear(1152, 64)     # from the printed sizes
+        self.linear_1 = nn.Linear(1152, 64)                 # from the printed sizes
         self.drop_1 = nn.Dropout(0.2)
 
         self.gru = nn.GRU(64, 32, bidirectional=True, num_layers=2, dropout=0.2)
-        self.output = nn.Linear(64, num_chars+1)
+        self.output = nn.Linear(64, num_chars+1)            # 64 here because of bidirectional GRU
 
     def forward(self, images, targets=None):
         bs, c, h, w = images.size()
@@ -48,7 +48,7 @@ class CaptchaModel(nn.Module):
         x = self.output(x)
         # print(x.size())
 
-        # Put timestep in the beginning (reqd by CTC loss)
+        # Put timestep in the beginning (required by CTC loss)
         x = x.permute(1, 0, 2)
         # print(x.size())
 

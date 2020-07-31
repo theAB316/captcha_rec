@@ -10,19 +10,23 @@ from sklearn import metrics
 
 import config
 import dataset
-# import engine
 from model import CaptchaModel
 
 
 def train(model, data_loader, optimizer):
-    model.train()
+    model.train()                           # put model to train mode
     final_loss = 0
     tk = tqdm(data_loader, total=len(data_loader))
 
     for data in tk:
         for k, v in data.items():
+            # loop through the 2 elements in the dict (images:tensor, targets:tensor)
+            # and put it on the gpu
             data[k] = v.to(config.device)
+
         optimizer.zero_grad()
+
+        # Pass **data because data is a dict. model takes 2 params - images, targets
         _, loss = model(**data)
         loss.backward()
         optimizer.step()
@@ -32,7 +36,7 @@ def train(model, data_loader, optimizer):
 
 
 def eval(model, data_loader):
-    model.eval()
+    model.eval()                            # Eval mode
     final_loss = 0
     final_preds = []
 
