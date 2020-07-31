@@ -1,4 +1,5 @@
 from pathlib import Path
+from tqdm import tqdm
 import torch
 import numpy as np
 
@@ -8,8 +9,44 @@ from sklearn import metrics
 
 import config
 import dataset
-import engine
+# import engine
 from model import CaptchaModel
+
+
+def train(model, data_loader, optimizer):
+    model.train()
+    final_loss = 0
+    tk = tqdm(data_loader, total=len(data_loader))
+
+    for data in tk:
+        for k, v in data.items():
+            data[k] = v.to(config.device)
+        optimizer.zero_grad()
+        _, loss = model(**data)
+        loss.backward()
+        optimizer.step()
+        final_loss += loss.item()
+
+    return final_loss / len(data_loader)
+
+
+def eval(model, data_loader):
+    model.eval()
+    final_loss = 0
+    final_preds = []
+
+    with torch.no_grad():
+        tk = tqdm(data_loader, total=len(data_loader))
+
+        for data in tk:
+            for k, v in data.items():
+                data[k] = v.to(config.device)
+
+            batch_preds, loss = model(**data)
+            final_loss += loss.item()
+            final_preds.append(batch_preds)
+
+        return final_preds, final_loss / len(data_loader)
 
 
 def run_training():
@@ -55,8 +92,8 @@ def run_training():
     )
 
     test_dataset = dataset.ClassificationDataset(image_paths=test_images,
-                                                  targets=test_targets,
-                                                  resize=(config.image_height, config.image_width))
+                                                 targets=test_targets,
+                                                 resize=(config.image_height, config.image_width))
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
@@ -74,15 +111,10 @@ def run_training():
     )
 
     for epoch in range(config.epochs):
-        train_loss = engine.train(model, train_loader, optimizer)
-        valid_preds, valid_loss = engine.eval(model, train_loader)
+        train_loss = train(model, train_loader, optimizer)
+        valid_preds, valid_loss = eval(model, test_loader)
         print(f"Epoch: {epoch}, Train loss: {train_loss}, Val loss: {valid_loss}")
-
-
 
 
 if __name__ == "__main__":
     run_training()
-
-
-
