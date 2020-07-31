@@ -1,5 +1,6 @@
 from pathlib import Path
 from tqdm import tqdm
+from pprint import pprint
 import torch
 import numpy as np
 
@@ -47,6 +48,37 @@ def eval(model, data_loader):
             final_preds.append(batch_preds)
 
         return final_preds, final_loss / len(data_loader)
+
+
+def decode_predictions(preds, encoder):
+    """
+    :param preds: Predictions from the model
+    :param encoder: Label Encoder
+    """
+    preds = preds.permute(1, 0, 2)          # [bs, ts, preds]
+    preds = torch.softmax(preds, 2)
+    preds = torch.argmax(preds, 2)
+    preds = preds.detach().cpu().numpy()
+
+
+    captcha_preds = []
+    batch_size = preds.shape[0]
+    for img_index in range(batch_size):
+        temp_preds = []                     # store preds of each image
+        timesteps = preds[img_index]        # (75, ) pred labels for each timestep
+        for t in timesteps:
+            t = t - 1                       # subtract 1 from the labels
+            if t == -1:
+                temp_preds.append("*")      # indicates an unknown char
+            else:
+                pred_label = encoder.inverse_transform([t])[0]
+                temp_preds.append(pred_label)
+
+        # Now we have all 75 preds for a single image
+        # Concat all 75 chars into a string and append them
+        captcha_preds.append("".join(temp_preds))
+
+    return captcha_preds
 
 
 def run_training():
@@ -113,6 +145,16 @@ def run_training():
     for epoch in range(config.epochs):
         train_loss = train(model, train_loader, optimizer)
         valid_preds, valid_loss = eval(model, test_loader)
+
+        # Print out the actual label and predicted labels
+        # Loop through and pass each batch to the decode function
+        valid_preds_tmp  = []
+        for vp in valid_preds:
+            vp = decode_predictions(vp, le)
+            valid_preds_tmp.extend(vp)
+        valid_preds = valid_preds_tmp
+        pprint(list(zip(test_orig_targets, valid_preds))[:5])
+
         print(f"Epoch: {epoch}, Train loss: {train_loss}, Val loss: {valid_loss}")
 
 
