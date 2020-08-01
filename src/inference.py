@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 import torch
+import argparse
 
 import numpy as np
 from PIL import Image
@@ -74,7 +75,11 @@ def get_predictions(image_path, model_path):
 
 
 if __name__ == "__main__":
-    image_path = Path(config.output_dir)/"test2.png"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--filename', type=str, help='path to the test captcha image')
+    args = parser.parse_args()
+
+    image_path = Path(config.output_dir)/args.filename
     model_path = Path(config.output_dir)/"captcha_model.pkl"
 
     get_predictions(image_path, model_path)
