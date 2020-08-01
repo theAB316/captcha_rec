@@ -66,7 +66,6 @@ def decode_predictions(preds, encoder):
     preds = torch.argmax(preds, 2)
     preds = preds.detach().cpu().numpy()
 
-
     captcha_preds = []
     batch_size = preds.shape[0]
     for img_index in range(batch_size):
@@ -178,6 +177,7 @@ def run_training():
             prev_val_loss = val_loss
 
         print("\n\n")
+
 
 if __name__ == "__main__":
     run_training()
