@@ -6,10 +6,11 @@ This project was inspired by <a href="https://www.youtube.com/watch?v=IcLEJB2pY2
 To train the model, run:
 <pre>
 python3 train.py
-</pre>
+</pre> 
  
-To test the model on an image: 
+ 
+ 
+To test the model on an image, add the image to the output folder and pass the file name as an argument: 
 <pre>
-Add the image to the output folder and pass it as an argument.
 python3 train.py --filename=test2.png
 </pre>
