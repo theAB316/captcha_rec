@@ -2,12 +2,13 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+
 class CaptchaModel(nn.Module):
     def __init__(self, num_chars):
         super().__init__()
 
-        self.conv_1 = nn.Conv2d(3, 128, kernel_size=(3,3), padding=(1,1))
-        self.maxpool_1 = nn.MaxPool2d(kernel_size=(2,2))
+        self.conv_1 = nn.Conv2d(3, 128, kernel_size=(3,  3), padding=(1, 1))
+        self.maxpool_1 = nn.MaxPool2d(kernel_size=(2, 2))
 
         self.conv_2 = nn.Conv2d(128, 64, kernel_size=(3, 3), padding=(1, 1))
         self.maxpool_2 = nn.MaxPool2d(kernel_size=(2, 2))
@@ -72,8 +73,14 @@ class CaptchaModel(nn.Module):
 
         return x, None
 
+
 if __name__ == "__main__":
     cm = CaptchaModel(19)
+
+    # for param_tensor in cm.state_dict():
+    #     print("{:>30}, \t{}".format(param_tensor, cm.state_dict()[param_tensor].size()))
+
     img = torch.rand((5, 3, 75, 300))
     target = torch.randint(1, 20, (5, 5))
     x, loss = cm(img, target)
+

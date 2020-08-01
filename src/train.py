@@ -1,8 +1,9 @@
 from pathlib import Path
 from tqdm import tqdm
 from pprint import pprint
-import torch
 import numpy as np
+import torch
+import sys
 
 from sklearn import preprocessing
 from sklearn import model_selection
@@ -20,9 +21,9 @@ def train(model, data_loader, optimizer):
 
     for data in tk:
         for k, v in data.items():
-            # loop through the 2 elements in the dict (images:tensor, targets:tensor)
-            # and put it on the gpu
-            data[k] = v.to(config.device)
+            # loop through the 2 elements in the dict (images:tensor, targets:tensor) and put it on the gpu
+            # data[k] = v.to(config.device)
+            data[k] = v.cuda()
 
         optimizer.zero_grad()
 
@@ -45,7 +46,8 @@ def eval(model, data_loader):
 
         for data in tk:
             for k, v in data.items():
-                data[k] = v.to(config.device)
+                # data[k] = v.to(config.device)
+                data[k] = v.cuda()
 
             batch_preds, loss = model(**data)
             final_loss += loss.item()
@@ -86,6 +88,7 @@ def decode_predictions(preds, encoder):
 
 
 def run_training():
+    # Create pathlib.Path for the data
     data_path = Path(config.data_dir)
     image_files = list(data_path.glob("*.png"))
     targets = []
@@ -110,7 +113,7 @@ def run_training():
     msg = "Encoded targets: \n{}"
     print(msg.format(targets_encoded))
 
-    # Split dataset
+    # Split the dataset
     train_images, test_images, train_targets, test_targets, train_orig_targets, test_orig_targets = \
         model_selection.train_test_split(
             image_files, targets_encoded, targets_orig, test_size=0.1, random_state=42
@@ -138,29 +141,43 @@ def run_training():
         shuffle=False
     )
 
+    # Create instance of the model and assign to gpu
     model = CaptchaModel(num_chars=len(le.classes_))
-    model.to(config.device)
+    # model.to(config.device)
+    model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, factor=0.8, patience=5, verbose=True
     )
 
+    prev_val_loss = sys.maxsize
     for epoch in range(config.epochs):
+        # Train the model over all train batches
         train_loss = train(model, train_loader, optimizer)
-        valid_preds, valid_loss = eval(model, test_loader)
+
+        # Test the model over test batches
+        val_preds, val_loss = eval(model, test_loader)
 
         # Print out the actual label and predicted labels
         # Loop through and pass each batch to the decode function
-        valid_preds_tmp  = []
-        for vp in valid_preds:
+        val_preds_tmp = []
+        for vp in val_preds:
             vp = decode_predictions(vp, le)
-            valid_preds_tmp.extend(vp)
-        valid_preds = valid_preds_tmp
-        pprint(list(zip(test_orig_targets, valid_preds))[:5])
+            val_preds_tmp.extend(vp)
+        val_preds = val_preds_tmp
 
-        print(f"Epoch: {epoch}, Train loss: {train_loss}, Val loss: {valid_loss}")
+        # Print out the first 5 predictions for the test set each epoch
+        print(f"Epoch: {epoch+1}, Train loss: {train_loss}, Val loss: {val_loss}")
+        pprint(list(zip(test_orig_targets, val_preds))[:5])
 
+        # Save the model if val_loss decreased
+        if val_loss <= prev_val_loss:
+            print(f"Val loss decreased from {prev_val_loss} to {val_loss}. Saving model.")
+            torch.save(model.state_dict(), Path(config.output_dir)/'captcha_model.pkl')
+            prev_val_loss = val_loss
+
+        print("\n\n")
 
 if __name__ == "__main__":
     run_training()
