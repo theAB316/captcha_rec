@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		#input, #result {
+			width: 30%;
+		}
+	</style>
+	<title>Captcha Recognition</title>
+	<script type="text/javascript">
+	    var url = "http://127.0.0.1:9999/"
+
+		xhr = new XMLHttpRequest;
+		function fill_input_data(){
+			document.getElementById("fetching").style.display = "inline";
+			input_data = document.getElementById("input").files[0];
+
+			var post_data = "{\"image\": input_data}";
+			// var post_data = "{\"image\": \"msg\"}";
+			xhr.open("POST", url, true);
+			xhr.setRequestHeader('Content-type', 'application/json');
+			xhr.onreadystatechange = display_summary;
+			xhr.send(post_data);
+		}
+		function display_summary(){
+			if(this.readyState == 4 && this.status == 200){
+				document.getElementById("fetching").style.display = "none";
+				var result = this.response;
+				console.log(result);
+
+				obj = JSON.parse(result)
+				document.getElementById("result_text").style.display = "block";
+				document.getElementById("result").value = obj.summary;
+			}
+		}
+	</script>
+</head>
+
+<body>
+	<h1 style="text-align:center">Captcha Recognition</h1>
+
+	<div style="text-align:center">
+	<form method="POST">
+		<p><b>Enter your text here:</b> <br>
+			<input type="file" name="input_data" id = "input"> <br><br>
+			<input type="button" value = "Get Prediction" onclick = "fill_input_data()">
+		</p>
+	</form>
+	<br>
+	<p id="fetching" style="display:none">Fetching summary...</p>
+
+	<p id="result_text"><b> The prediction is: </b><br>
+		<input type="text" id="result"></input>
+	</p>
+</div>
+</body>
+</html>
