@@ -5,12 +5,12 @@ This project was inspired by <a href="https://www.youtube.com/watch?v=IcLEJB2pY2
 
 To train the model, run:
 <pre>
-python3 train.py
+python train.py
 </pre> 
  
  
  
 To test the model on an image, add the image to the output folder and pass the file name as an argument: 
 <pre>
-python3 train.py --filename=test2.png
+python inference.py --filename=test2.png
 </pre>
